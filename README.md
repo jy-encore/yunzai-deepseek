@@ -24,7 +24,7 @@ pnpm add openai -w
 | `botName` | `安可儿` | 机器人称呼 |
 | `role` | 内置人设 | 只发给模型，不出现在帮助图和状态图上 |
 | `probability` | `0.05` | 普通消息触发概率 |
-| `nameProbability` | `1` | 以 `botName` 开头时的触发概率，`1` 为必进回复 |
+| `nameProbability` | `1` | 点名、@ 机器人或回复机器人时的触发概率，`1` 为必进回复 |
 | `historyCount` | `10` | 命中后附带的前文条数 |
 | `logKeep` | `100` | 每个群本地保留条数 |
 | `maxTokens` | `120` | 普通回复上限 |
@@ -74,7 +74,7 @@ pnpm add openai -w
 
 1. 每条群消息先写入 `chatlog/群号.json`。
 2. 普通消息按 `probability` 决定要不要问模型。没中签不请求。
-3. 以 `botName` 开头的消息按 `nameProbability`，默认 100%，并且不允许模型回 `[IGNORE]`。
+3. 以 `botName` 开头、@ 机器人，或回复机器人的消息，按 `nameProbability`，默认 100%，并且不允许模型回 `[IGNORE]`。只 @ 机器人、后面没字，也会进回复。@全体不算。
 4. 问模型时只带当前这条和它前面 `historyCount` 条。内容、昵称、QQ 号都会带上。
 5. 模型回 `[IGNORE]` 就不发言。
 6. QQ 号以 `3889` 开头的消息不参与概率，也不进入总结和那几条前文。

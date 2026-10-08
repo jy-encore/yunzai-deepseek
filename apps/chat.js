@@ -2,7 +2,7 @@ import { getConfig, isGroupEnabled } from '../model/config.js'
 import { contextOf, recordBot, recordIncoming } from '../model/chatlog.js'
 import { buildChatPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
-import { clip, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isSelfMsg, toSegments } from '../utils/text.js'
+import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, toSegments } from '../utils/text.js'
 
 export class DeepSeekChat extends plugin {
   constructor() {
@@ -30,12 +30,14 @@ export class DeepSeekChat extends plugin {
     if (isFilteredUser(e.user_id)) return false
 
     const raw = e.msg ? String(e.msg).trim() : ''
-    if (!raw || isIgnoredPrefix(raw)) return false
+    if (raw && isIgnoredPrefix(raw)) return false
 
     const cfg = getConfig()
     const name = String(cfg.botName || '').trim()
     const named = !!(name && raw.startsWith(name))
-    const chance = named ? cfg.nameProbability : cfg.probability
+    const wake = named || isAtBot(e) || await isReplyToBot(e)
+    if (!wake && !raw) return false
+    const chance = wake ? cfg.nameProbability : cfg.probability
     if (Math.random() >= chance) return false
 
     const { history, current, skip } = contextOf(e.group_id, cfg.historyCount)
@@ -46,7 +48,7 @@ export class DeepSeekChat extends plugin {
       role: cfg.role,
       history,
       current,
-      mustReply: named
+      mustReply: wake
     })
 
     let text = ''

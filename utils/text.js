@@ -37,7 +37,7 @@ export function extractText(e) {
       if (seg.type === 'text') return seg.text || ''
       if (seg.type === 'image') return '[图片]'
       if (seg.type === 'face') return '[表情]'
-      if (seg.type === 'at') return `@${seg.qq || seg.text || ''}`
+      if (seg.type === 'at') return `@${seg.qq || seg.data?.qq || seg.text || ''}`
       if (seg.type === 'video') return '[视频]'
       if (seg.type === 'record') return '[语音]'
       if (seg.type === 'json' || seg.type === 'xml') return '[卡片]'
@@ -46,6 +46,59 @@ export function extractText(e) {
   }
   if (!t) t = e.raw_message || e.msg || ''
   return clip(cqToText(t), 180)
+}
+
+function botUins(e) {
+  const set = new Set()
+  if (e?.self_id) set.add(String(e.self_id))
+  const bot = typeof Bot !== 'undefined' ? Bot : global.Bot
+  if (bot?.uin != null) {
+    const list = Array.isArray(bot.uin) ? bot.uin : [bot.uin]
+    for (const u of list) if (u != null && u !== '') set.add(String(u))
+  }
+  return set
+}
+
+export function isAtBot(e) {
+  if (e?.atBot || e?.atme) return true
+  const uins = botUins(e)
+  if (e?.at != null && e.at !== 'all' && uins.has(String(e.at))) return true
+  const segs = Array.isArray(e?.message) ? e.message : []
+  for (const seg of segs) {
+    if (!seg || seg.type !== 'at') continue
+    const qq = seg.qq ?? seg.data?.qq ?? seg.user_id
+    if (qq == null || qq === 'all') continue
+    if (uins.has(String(qq))) return true
+  }
+  const raw = String(e?.raw_message || '')
+  for (const u of uins) {
+    if (raw.includes(`[CQ:at,qq=${u}]`)) return true
+  }
+  return false
+}
+
+export async function isReplyToBot(e) {
+  const uins = botUins(e)
+  const hit = (uid) => uid != null && uid !== '' && uid !== 'all' && uins.has(String(uid))
+  const src = e?.source
+  if (hit(src?.user_id) || hit(src?.sender?.user_id) || hit(src?.sender?.uin)) return true
+  const cached = e?.reply
+  if (cached && typeof cached !== 'function' && (hit(cached.sender?.user_id) || hit(cached.user_id) || hit(cached.sender?.uin))) return true
+  const segs = Array.isArray(e?.message) ? e.message : []
+  let hasReply = false
+  for (const seg of segs) {
+    if (!seg || seg.type !== 'reply') continue
+    hasReply = true
+    if (hit(seg.user_id ?? seg.data?.user_id ?? seg.sender?.user_id)) return true
+  }
+  if (!hasReply || typeof e.getReply !== 'function') return false
+  try {
+    const r = await e.getReply()
+    return hit(r?.sender?.user_id) || hit(r?.user_id) || hit(r?.sender?.uin)
+  } catch (err) {
+    logger.error('deepseek 读取回复来源失败: ' + (err?.message || err))
+    return false
+  }
 }
 
 export function isFilteredUser(uid) {
