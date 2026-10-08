@@ -42,6 +42,13 @@
       "apiKeys": [],
       "models": ["Qwen/Qwen2.5-7B-Instruct"],
       "model": "Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "name": "moyuu",
+      "baseURL": "https://moyuu.cc/v1",
+      "apiKeys": [],
+      "models": ["gpt-4o"],
+      "model": "gpt-4o"
     }
   ],
   "botName": "安可儿",

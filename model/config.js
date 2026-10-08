@@ -45,6 +45,13 @@ export const PRESETS = [
     apiKeys: [],
     models: ['Qwen/Qwen2.5-7B-Instruct'],
     model: 'Qwen/Qwen2.5-7B-Instruct'
+  },
+  {
+    name: 'moyuu',
+    baseURL: 'https://moyuu.cc/v1',
+    apiKeys: [],
+    models: ['gpt-4o'],
+    model: 'gpt-4o'
   }
 ]
 
@@ -138,6 +145,9 @@ function normalize(raw) {
     seen.add(e.name)
     return true
   })
+  for (const preset of PRESETS) {
+    if (!endpoints.some(e => e.name === preset.name)) endpoints.push(normEndpoint(preset))
+  }
 
   let active = String(src.active || seededActive || '').trim()
   if (!endpoints.some(e => e.name === active)) active = endpoints[0].name
@@ -175,8 +185,10 @@ export function getConfig() {
   try {
     const raw = JSON.parse(fs.readFileSync(configFile, 'utf8'))
     cache = normalize(raw)
+    const had = new Set((Array.isArray(raw.endpoints) ? raw.endpoints : []).map(e => e?.name).filter(Boolean))
+    const missingPreset = PRESETS.some(p => !had.has(p.name))
     const legacy = raw.model != null || raw.baseURL != null || raw.apiKeys != null || raw.apiKey != null || !Array.isArray(raw.endpoints)
-    if (legacy) write(cache)
+    if (legacy || missingPreset) write(cache)
   } catch (err) {
     logger.error('deepseek 读取 config.json 失败，使用默认配置: ' + (err?.message || err))
     cache = normalize({})
