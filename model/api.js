@@ -1,50 +1,58 @@
 import OpenAI from 'openai'
-import { getConfig } from './config.js'
+import { activeEndpoint, getConfig } from './config.js'
 import { pickContent } from '../utils/text.js'
 
-const clients = []
+const clients = new Map()
 let keyIndex = 0
 
-function clientAt(i, cfg) {
-  if (!clients[i]) {
-    clients[i] = new OpenAI({
-      baseURL: cfg.baseURL || 'https://api.deepseek.com',
-      apiKey: cfg.apiKeys[i],
+function clientFor(ep, i) {
+  const id = `${ep.name}:${i}:${ep.baseURL}:${ep.apiKeys[i]}`
+  if (!clients.has(id)) {
+    clients.set(id, new OpenAI({
+      baseURL: ep.baseURL,
+      apiKey: ep.apiKeys[i],
       timeout: 90000
-    })
+    }))
   }
-  return clients[i]
+  return clients.get(id)
 }
 
 export function resetClients() {
-  clients.length = 0
+  clients.clear()
   keyIndex = 0
 }
 
+function deepseekHost(ep) {
+  return /deepseek/i.test(ep?.name || '') || /deepseek\.com/i.test(ep?.baseURL || '')
+}
+
 export async function complete(messages, { think = false, maxTokens = 120, temperature = 0.9 } = {}) {
-  const cfg = getConfig()
-  if (!cfg.apiKeys.length) throw new Error('config.json 里没有 apiKeys')
-  const extra = think
-    ? { thinking: { type: 'enabled' }, reasoning_effort: 'low' }
-    : { thinking: { type: 'disabled' }, reasoning_effort: 'none' }
+  const ep = activeEndpoint()
+  if (!ep?.apiKeys?.length) throw new Error(`接口 ${ep?.name || ''} 没有 apiKeys`)
   const body = {
-    model: cfg.model,
+    model: ep.model,
     messages,
-    max_tokens: maxTokens,
-    reasoning_effort: extra.reasoning_effort,
-    extra_body: extra
+    max_tokens: maxTokens
+  }
+  if (deepseekHost(ep)) {
+    const extra = think
+      ? { thinking: { type: 'enabled' }, reasoning_effort: 'low' }
+      : { thinking: { type: 'disabled' }, reasoning_effort: 'none' }
+    body.reasoning_effort = extra.reasoning_effort
+    body.extra_body = extra
   }
   if (!think) body.temperature = temperature
   let tried = 0
   let lastErr
-  while (tried < cfg.apiKeys.length) {
+  while (tried < ep.apiKeys.length) {
+    const i = keyIndex % ep.apiKeys.length
     try {
-      return await clientAt(keyIndex, cfg).chat.completions.create(body, { timeout: think ? 90000 : 28000 })
+      return await clientFor(ep, i).chat.completions.create(body, { timeout: think ? 90000 : 28000 })
     } catch (err) {
       lastErr = err
       tried++
-      keyIndex = (keyIndex + 1) % cfg.apiKeys.length
-      clients.length = 0
+      keyIndex = (i + 1) % ep.apiKeys.length
+      clients.delete(`${ep.name}:${i}:${ep.baseURL}:${ep.apiKeys[i]}`)
     }
   }
   throw lastErr
@@ -61,10 +69,11 @@ export async function completeText(messages, opt = {}) {
 }
 
 export async function getBalance() {
-  const cfg = getConfig()
-  const key = cfg.apiKeys?.[0]
+  const ep = activeEndpoint()
+  const key = ep?.apiKeys?.[0]
   if (!key) return '未配置密钥'
-  const base = String(cfg.baseURL || 'https://api.deepseek.com').replace(/\/$/, '')
+  if (!deepseekHost(ep)) return '当前接口不支持'
+  const base = String(ep.baseURL || '').replace(/\/$/, '')
   try {
     const res = await fetch(`${base}/user/balance`, {
       headers: {
@@ -73,7 +82,7 @@ export async function getBalance() {
       }
     })
     if (!res.ok) {
-      logger.error(`deepseek 查询余额失败: HTTP ${res.status}`)
+      logger.error(`查询余额失败: HTTP ${res.status}`)
       return '查询失败'
     }
     const data = await res.json()
@@ -81,7 +90,7 @@ export async function getBalance() {
     if (!infos.length) return data.is_available ? '可用' : '不足'
     return infos.map(b => `${b.total_balance} ${b.currency || ''}`.trim()).join(' / ')
   } catch (err) {
-    logger.error('deepseek 查询余额失败: ' + (err?.message || err))
+    logger.error('查询余额失败: ' + (err?.message || err))
     return '查询失败'
   }
 }

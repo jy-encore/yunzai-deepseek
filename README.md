@@ -19,9 +19,9 @@ pnpm add openai -w
 
 | 字段 | 默认 | 说明 |
 |---|---|---|
-| `apiKeys` | `[]` | 密钥列表。留空则不会请求接口 |
-| `baseURL` | `https://api.deepseek.com` | 接口地址 |
-| `model` | `deepseek-flash` | 模型名 |
+| `active` | `deepseek` | 当前使用的接口名 |
+| `endpoints` | 见下 | 多套地址、密钥和可选模型。密钥留在本机 |
+| `model` / `baseURL` / `apiKeys` | 跟随当前接口 | 旧字段，保存时会和当前接口对齐 |
 | `botName` | `安可儿` | 机器人称呼 |
 | `role` | 内置人设 | 只发给模型，不出现在帮助图和状态图上 |
 | `probability` | `0.05` | 普通消息触发概率 |
@@ -32,12 +32,31 @@ pnpm add openai -w
 | `temperature` | `0.9` | 采样温度 |
 | `disabledGroups` | `[]` | 关闭回复的群号，一般用指令改 |
 
+`endpoints` 里每一项都是一套 OpenAI 兼容接口：
+
+```json
+{
+  "name": "qwen",
+  "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "apiKeys": [],
+  "models": ["qwen-plus", "qwen-flash"],
+  "model": "qwen-plus"
+}
+```
+
+仓库里预置了 DeepSeek、通义千问、小米 MiMo、Moonshot、智谱、硅基流动，密钥都是空的。其它兼容 `/chat/completions` 的国内接口，用 `#deepseek添加接口` 写进去即可。思考相关参数只在 DeepSeek 上带，避免其它厂商拒请求。余额查询也只有 DeepSeek 支持。
+
 ## 指令
 
 主人指令：
 
-- `#deepseek帮助`：帮助图，右上角是账户余额
-- `#deepseek状态`：模型、概率、本群记录和余额，不展示人设
+- `#deepseek帮助`：帮助图。DeepSeek 接口时右上角是余额
+- `#deepseek状态`：当前接口、模型、概率、本群记录和余额
+- `#deepseek接口`：列出全部地址、当前模型和密钥数量，不显示密钥本身
+- `#deepseek切换接口 qwen` 或 `#deepseek切换接口 2`
+- `#deepseek切换模型 qwen-plus`：模型在别的接口里就一起切过去；不在列表里就记到当前接口
+- `#deepseek添加接口 名称 地址 密钥 模型名`
+- `#deepseek添加密钥` 后面接密钥，追加到当前接口
 - `#deepseek开启` / `#deepseek关闭`：当前群的回复开关
 - `#deepseek设置回复概率 5`
 - `#deepseek设置历史条数 10`

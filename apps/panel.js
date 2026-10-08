@@ -1,8 +1,8 @@
-import { getConfig, isGroupEnabled, saveConfig, setGroupEnabled } from '../model/config.js'
+import { addEndpoint, addKey, getConfig, isGroupEnabled, saveConfig, setGroupEnabled, switchEndpoint, switchModel } from '../model/config.js'
 import { logCount } from '../model/chatlog.js'
 import { renderCard } from '../model/render.js'
 import { clamp, parseProb } from '../utils/text.js'
-import { getBalance } from '../model/api.js'
+import { getBalance, resetClients } from '../model/api.js'
 
 const HELP = [
   { cmd: '#deepseek帮助', desc: '打开这张帮助卡' },
@@ -16,6 +16,11 @@ const HELP = [
   { cmd: '#deepseek设置回复上限 120', desc: '单次 max_tokens' },
   { cmd: '#deepseek设置温度 0.9', desc: '采样温度 0 到 2' },
   { cmd: '#deepseek设置提示词 ...', desc: '改角色设定，写进 config.json' },
+  { cmd: '#deepseek接口', desc: '列出地址、模型和是否已填密钥' },
+  { cmd: '#deepseek切换接口 qwen', desc: '按名称或序号切换当前接口' },
+  { cmd: '#deepseek切换模型 qwen-plus', desc: '切换模型，未登记的名字会记到当前接口' },
+  { cmd: '#deepseek添加接口 名 地址 密钥 模型', desc: '再存一套 OpenAI 兼容接口' },
+  { cmd: '#deepseek添加密钥', desc: '给当前接口追加一把密钥，密钥写在指令后面' },
   { cmd: '#deepseek清空记录', desc: '清空本群 chatlog' }
 ]
 
@@ -39,6 +44,11 @@ export class DeepSeekPanel extends plugin {
         { reg: '^#deepseek设置历史条数(.*)$', fnc: 'setHistory', permission: 'master' },
         { reg: '^#deepseek设置回复上限(.*)$', fnc: 'setMaxTokens', permission: 'master' },
         { reg: '^#deepseek设置温度(.*)$', fnc: 'setTemperature', permission: 'master' },
+        { reg: '^#deepseek接口$', fnc: 'listEndpoints', permission: 'master' },
+        { reg: '^#deepseek切换接口(.*)$', fnc: 'useEndpoint', permission: 'master' },
+        { reg: '^#deepseek切换模型(.*)$', fnc: 'useModel', permission: 'master' },
+        { reg: '^#deepseek添加接口(.*)$', fnc: 'createEndpoint', permission: 'master' },
+        { reg: '^#deepseek添加密钥(.*)$', fnc: 'createKey', permission: 'master' },
         { reg: '^#deepseek设置提示词(.*)$', fnc: 'setRole', permission: 'master' }
       ]
     })
@@ -57,7 +67,7 @@ export class DeepSeekPanel extends plugin {
     const count = e.isGroup ? logCount(e.group_id) : 0
     const data = {
       title: cfg.botName || 'DeepSeek',
-      model: cfg.model,
+      model: `${cfg.active} / ${cfg.model}`,
       probability: `${(cfg.probability * 100).toFixed(1)}%`,
       historyCount: cfg.historyCount,
       maxTokens: cfg.maxTokens,
@@ -147,6 +157,72 @@ export class DeepSeekPanel extends plugin {
     }
     saveConfig({ role: role.slice(0, 400) })
     await e.reply('角色设定已写入 config.json')
+    return true
+  }
+
+  async listEndpoints(e) {
+    const cfg = getConfig()
+    const lines = cfg.endpoints.map((ep, i) => {
+      const mark = ep.name === cfg.active ? ' 当前' : ''
+      const keys = ep.apiKeys.length ? `${ep.apiKeys.length} 把密钥` : '未填密钥'
+      return `${i + 1}. ${ep.name}${mark}\n${ep.baseURL}\n${ep.model}｜${keys}`
+    })
+    await e.reply(lines.join('\n\n'))
+    return true
+  }
+
+  async useEndpoint(e) {
+    const name = e.msg.replace(/^#deepseek切换接口/, '').trim()
+    const cfg = switchEndpoint(name)
+    if (!cfg) {
+      await e.reply('没有这个接口。用 #deepseek接口 看名称或序号')
+      return true
+    }
+    resetClients()
+    const keys = cfg.apiKeys.length ? '' : '，还没有密钥'
+    await e.reply(`已切换到 ${cfg.active} / ${cfg.model}${keys}`)
+    return true
+  }
+
+  async useModel(e) {
+    const name = e.msg.replace(/^#deepseek切换模型/, '').trim()
+    const cfg = switchModel(name)
+    if (!cfg) {
+      await e.reply('格式：#deepseek切换模型 qwen-plus')
+      return true
+    }
+    resetClients()
+    await e.reply(`已切换到 ${cfg.active} / ${cfg.model}`)
+    return true
+  }
+
+  async createEndpoint(e) {
+    const rest = e.msg.replace(/^#deepseek添加接口/, '').trim()
+    const parts = rest.split(/\s+/)
+    if (parts.length < 4) {
+      await e.reply('格式：#deepseek添加接口 名称 地址 密钥 模型名')
+      return true
+    }
+    const [name, baseURL, apiKey, ...modelParts] = parts
+    const cfg = addEndpoint({ name, baseURL, apiKey, model: modelParts.join(' ') })
+    if (!cfg) {
+      await e.reply('名称、地址、模型都不能空')
+      return true
+    }
+    resetClients()
+    await e.reply(`已保存并切换到 ${cfg.active} / ${cfg.model}`)
+    return true
+  }
+
+  async createKey(e) {
+    const key = e.msg.replace(/^#deepseek添加密钥/, '').trim()
+    const cfg = addKey(key)
+    if (!cfg) {
+      await e.reply('格式：#deepseek添加密钥 后面接密钥')
+      return true
+    }
+    resetClients()
+    await e.reply(`已给 ${cfg.active} 记下密钥，当前 ${cfg.apiKeys.length} 把`)
     return true
   }
 }
