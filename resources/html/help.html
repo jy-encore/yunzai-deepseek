@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  #container {
+    width: 680px;
+    padding: 28px;
+    background:
+      radial-gradient(120px 80px at 90% 0%, rgba(255, 186, 120, .35), transparent 70%),
+      linear-gradient(180deg, #fff8ef 0%, #f3e6d4 100%);
+    color: #3a2a22;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px; }
+  h1 { font-size: 34px; letter-spacing: 1px; }
+  .sub { font-size: 14px; color: #8a5a3a; }
+  .card {
+    background: rgba(255,255,255,.72);
+    border: 1px solid rgba(90, 52, 28, .12);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .row {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(90, 52, 28, .08);
+    align-items: baseline;
+  }
+  .row:first-child { border-top: 0; }
+  .cmd { width: 250px; flex: none; font-weight: 700; color: #9a4b24; font-size: 15px; }
+  .desc { font-size: 14px; line-height: 1.45; color: #4d3b32; }
+  .foot { margin-top: 14px; font-size: 12px; color: #8d7364; }
+</style>
+</head>
+<body>
+  <div id="container">
+    <div class="head">
+      <h1>{{title}}</h1>
+      <div class="sub">{{sub}}</div>
+    </div>
+    <div class="card">
+      {{each cmds item}}
+      <div class="row">
+        <div class="cmd">{{item.cmd}}</div>
+        <div class="desc">{{item.desc}}</div>
+      </div>
+      {{/each}}
+    </div>
+    <div class="foot">命中概率后才会把这条和前 10 条发给模型。模型回 [IGNORE] 则不发言。</div>
+  </div>
+</body>
+</html>

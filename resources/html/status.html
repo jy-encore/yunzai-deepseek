@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  #container {
+    width: 680px;
+    padding: 28px;
+    background:
+      radial-gradient(140px 90px at 0% 0%, rgba(255, 214, 170, .7), transparent 70%),
+      linear-gradient(165deg, #2b211c 0%, #4a3328 55%, #6b4632 100%);
+    color: #fff6ec;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .kicker { font-size: 12px; letter-spacing: 3px; color: #efc7a2; }
+  h1 { font-size: 36px; margin: 4px 0 18px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cell {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .label { font-size: 12px; color: #efc7a2; }
+  .value { margin-top: 4px; font-size: 20px; font-weight: 700; word-break: break-all; }
+  .role {
+    margin-top: 12px;
+    background: rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #ffe8d2;
+  }
+</style>
+</head>
+<body>
+  <div id="container">
+    <div class="kicker">DEEPSEEK</div>
+    <h1>{{title}} · 状态</h1>
+    <div class="grid">
+      <div class="cell"><div class="label">模型</div><div class="value">{{model}}</div></div>
+      <div class="cell"><div class="label">回复概率</div><div class="value">{{probability}}</div></div>
+      <div class="cell"><div class="label">命中后前文</div><div class="value">{{historyCount}} 条</div></div>
+      <div class="cell"><div class="label">本群记录</div><div class="value">{{count}}</div></div>
+      <div class="cell"><div class="label">回复上限</div><div class="value">{{maxTokens}}</div></div>
+      <div class="cell"><div class="label">温度 / 密钥</div><div class="value">{{temperature}} / {{keys}}</div></div>
+      <div class="cell"><div class="label">群号</div><div class="value">{{groupId}}</div></div>
+      <div class="cell"><div class="label">单群上限</div><div class="value">{{logKeep}} 条</div></div>
+    </div>
+    <div class="role">{{role}}</div>
+  </div>
+</body>
+</html>

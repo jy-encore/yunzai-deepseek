@@ -1,0 +1,9 @@
+{
+  "name": "yunzai-deepseek",
+  "version": "1.0.0",
+  "description": "Yunzai DeepSeek 群聊插件",
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
