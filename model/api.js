@@ -59,3 +59,29 @@ export async function completeText(messages, opt = {}) {
   }
   return text
 }
+
+export async function getBalance() {
+  const cfg = getConfig()
+  const key = cfg.apiKeys?.[0]
+  if (!key) return '未配置密钥'
+  const base = String(cfg.baseURL || 'https://api.deepseek.com').replace(/\/$/, '')
+  try {
+    const res = await fetch(`${base}/user/balance`, {
+      headers: {
+        Authorization: `Bearer ${key}`,
+        Accept: 'application/json'
+      }
+    })
+    if (!res.ok) {
+      logger.error(`deepseek 查询余额失败: HTTP ${res.status}`)
+      return '查询失败'
+    }
+    const data = await res.json()
+    const infos = Array.isArray(data.balance_infos) ? data.balance_infos : []
+    if (!infos.length) return data.is_available ? '可用' : '不足'
+    return infos.map(b => `${b.total_balance} ${b.currency || ''}`.trim()).join(' / ')
+  } catch (err) {
+    logger.error('deepseek 查询余额失败: ' + (err?.message || err))
+    return '查询失败'
+  }
+}

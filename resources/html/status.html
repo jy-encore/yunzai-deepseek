@@ -25,15 +25,6 @@
   }
   .label { font-size: 12px; color: #efc7a2; }
   .value { margin-top: 4px; font-size: 20px; font-weight: 700; word-break: break-all; }
-  .role {
-    margin-top: 12px;
-    background: rgba(255,255,255,.08);
-    border-radius: 14px;
-    padding: 14px;
-    font-size: 14px;
-    line-height: 1.55;
-    color: #ffe8d2;
-  }
 </style>
 </head>
 <body>
@@ -50,8 +41,8 @@
       <div class="cell"><div class="label">本群回复</div><div class="value">{{reply}}</div></div>
       <div class="cell"><div class="label">群号</div><div class="value">{{groupId}}</div></div>
       <div class="cell"><div class="label">单群上限</div><div class="value">{{logKeep}} 条</div></div>
+      <div class="cell"><div class="label">余额</div><div class="value">{{balance}}</div></div>
     </div>
-    <div class="role">{{role}}</div>
   </div>
 </body>
 </html>

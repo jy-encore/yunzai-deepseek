@@ -2,6 +2,7 @@ import { getConfig, isGroupEnabled, saveConfig, setGroupEnabled } from '../model
 import { logCount } from '../model/chatlog.js'
 import { renderCard } from '../model/render.js'
 import { clamp, parseProb } from '../utils/text.js'
+import { getBalance } from '../model/api.js'
 
 const HELP = [
   { cmd: '#deepseek帮助', desc: '打开这张帮助卡' },
@@ -44,9 +45,10 @@ export class DeepSeekPanel extends plugin {
   }
 
   async help(e) {
-    const img = await renderCard('help', { title: 'DeepSeek', sub: '群聊插件', cmds: HELP })
+    const balance = await getBalance()
+    const img = await renderCard('help', { title: 'DeepSeek', sub: `余额 ${balance}`, cmds: HELP })
     if (img) await e.reply(img)
-    else await e.reply(helpText())
+    else await e.reply(`余额 ${balance}\n${helpText()}`)
     return true
   }
 
@@ -65,7 +67,7 @@ export class DeepSeekPanel extends plugin {
       groupId: e.group_id || '-',
       keys: cfg.apiKeys.length,
       reply: e.isGroup ? (isGroupEnabled(e.group_id) ? '开启' : '关闭') : '-',
-      role: cfg.role
+      balance: await getBalance()
     }
     const img = await renderCard('status', data)
     if (img) await e.reply(img)
@@ -78,7 +80,8 @@ export class DeepSeekPanel extends plugin {
         `本群回复 ${data.reply}`,
         `回复上限 ${data.maxTokens}`,
         `温度 ${data.temperature}`,
-        `密钥 ${data.keys} 个`
+        `密钥 ${data.keys} 个`,
+        `余额 ${data.balance}`
       ].join('\n'))
     }
     return true
