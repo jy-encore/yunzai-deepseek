@@ -155,9 +155,6 @@ function write(cfg) {
   fs.mkdirSync(path.dirname(configFile), { recursive: true })
   const out = {
     active: cfg.active,
-    model: cfg.model,
-    baseURL: cfg.baseURL,
-    apiKeys: cfg.apiKeys,
     endpoints: cfg.endpoints,
     botName: cfg.botName,
     role: cfg.role,
@@ -176,7 +173,10 @@ function write(cfg) {
 export function getConfig() {
   if (cache) return cache
   try {
-    cache = normalize(JSON.parse(fs.readFileSync(configFile, 'utf8')))
+    const raw = JSON.parse(fs.readFileSync(configFile, 'utf8'))
+    cache = normalize(raw)
+    const legacy = raw.model != null || raw.baseURL != null || raw.apiKeys != null || raw.apiKey != null || !Array.isArray(raw.endpoints)
+    if (legacy) write(cache)
   } catch (err) {
     logger.error('deepseek 读取 config.json 失败，使用默认配置: ' + (err?.message || err))
     cache = normalize({})

@@ -15,13 +15,12 @@ pnpm add openai -w
 
 ## 配置
 
-复制思路：直接改 [config/config.json](config/config.json)。`apiKeys` 默认是空数组，把 DeepSeek 密钥填在本机，**不要把填好的密钥提交回仓库**。
+复制思路：直接改 [config/config.json](config/config.json)。密钥写在对应接口的 `apiKeys` 里，留在本机，**不要提交回仓库**。
 
 | 字段 | 默认 | 说明 |
 |---|---|---|
 | `active` | `deepseek` | 当前使用的接口名 |
-| `endpoints` | 见下 | 多套地址、密钥和可选模型。密钥留在本机 |
-| `model` / `baseURL` / `apiKeys` | 跟随当前接口 | 旧字段，保存时会和当前接口对齐 |
+| `endpoints` | 见下 | 地址、密钥和模型都在这里 |
 | `botName` | `安可儿` | 机器人称呼 |
 | `role` | 内置人设 | 只发给模型，不出现在帮助图和状态图上 |
 | `probability` | `0.05` | 普通消息触发概率 |
@@ -45,6 +44,8 @@ pnpm add openai -w
 ```
 
 仓库里预置了 DeepSeek、通义千问、小米 MiMo、Moonshot、智谱、硅基流动，密钥都是空的。其它兼容 `/chat/completions` 的国内接口，用 `#deepseek添加接口` 写进去即可。思考相关参数只在 DeepSeek 上带，避免其它厂商拒请求。余额查询也只有 DeepSeek 支持。
+
+以前写在最外层的 `model`、`baseURL`、`apiKeys` 已经不再保存。手上如果还是旧文件、里面没有 `endpoints`，启动时会读一次并归进对应接口。
 
 ## 指令
 
