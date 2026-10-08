@@ -1,4 +1,4 @@
-import { getConfig, saveConfig } from '../model/config.js'
+import { getConfig, isGroupEnabled, saveConfig, setGroupEnabled } from '../model/config.js'
 import { logCount } from '../model/chatlog.js'
 import { renderCard } from '../model/render.js'
 import { clamp, parseProb } from '../utils/text.js'
@@ -6,6 +6,8 @@ import { clamp, parseProb } from '../utils/text.js'
 const HELP = [
   { cmd: '#deepseek帮助', desc: '打开这张帮助卡' },
   { cmd: '#deepseek状态', desc: '查看当前配置和本群记录' },
+  { cmd: '#deepseek开启', desc: '打开当前群的回复' },
+  { cmd: '#deepseek关闭', desc: '关掉当前群的回复' },
   { cmd: '#总结群聊', desc: '用本群 chatlog 做一次复盘' },
   { cmd: '#deepseek设置回复概率 5', desc: '普通消息触发概率，5 或 0.05' },
   { cmd: '#deepseek设置历史条数 10', desc: '命中后附带的前文条数' },
@@ -29,6 +31,8 @@ export class DeepSeekPanel extends plugin {
       rule: [
         { reg: '^#deepseek帮助$', fnc: 'help', permission: 'master' },
         { reg: '^#deepseek状态$', fnc: 'status', permission: 'master' },
+        { reg: '^#deepseek开启$', fnc: 'enable', permission: 'master' },
+        { reg: '^#deepseek关闭$', fnc: 'disable', permission: 'master' },
         { reg: '^#deepseek设置回复概率(.*)$', fnc: 'setProbability', permission: 'master' },
         { reg: '^#deepseek设置历史条数(.*)$', fnc: 'setHistory', permission: 'master' },
         { reg: '^#deepseek设置回复上限(.*)$', fnc: 'setMaxTokens', permission: 'master' },
@@ -59,6 +63,7 @@ export class DeepSeekPanel extends plugin {
       count: e.isGroup ? `${count} / ${cfg.logKeep}` : '请在群里查看',
       groupId: e.group_id || '-',
       keys: cfg.apiKeys.length,
+      reply: e.isGroup ? (isGroupEnabled(e.group_id) ? '开启' : '关闭') : '-',
       role: cfg.role
     }
     const img = await renderCard('status', data)
@@ -69,11 +74,32 @@ export class DeepSeekPanel extends plugin {
         `回复概率 ${data.probability}`,
         `前文 ${data.historyCount} 条`,
         `本群记录 ${data.count}`,
+        `本群回复 ${data.reply}`,
         `回复上限 ${data.maxTokens}`,
         `温度 ${data.temperature}`,
         `密钥 ${data.keys} 个`
       ].join('\n'))
     }
+    return true
+  }
+
+  async enable(e) {
+    if (!e.isGroup) {
+      await e.reply('请在群里开关回复')
+      return true
+    }
+    setGroupEnabled(e.group_id, true)
+    await e.reply('本群回复已开启')
+    return true
+  }
+
+  async disable(e) {
+    if (!e.isGroup) {
+      await e.reply('请在群里开关回复')
+      return true
+    }
+    setGroupEnabled(e.group_id, false)
+    await e.reply('本群回复已关闭')
     return true
   }
 

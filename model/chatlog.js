@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { chatlogDir } from './path.js'
 import { getConfig } from './config.js'
-import { clip, extractText, isGroupEvent, isSelfMsg } from '../utils/text.js'
+import { clip, extractText, isFilteredUser, isGroupEvent, isSelfMsg } from '../utils/text.js'
 
 const logs = new Map()
 const saveTimers = new Map()
@@ -10,6 +10,28 @@ let lastStamp = ''
 
 function fileOf(gid) {
   return path.join(chatlogDir, `${gid}.json`)
+}
+
+function normMsg(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const uid = raw.uid ?? raw.user_id ?? raw.userId
+  const m = raw.m ?? raw.msg ?? raw.message ?? raw.text
+  if (uid == null || m == null || m === '') return null
+  const ts = Number(raw.ts ?? raw.time ?? 0)
+  return {
+    ts: Number.isFinite(ts) ? ts : 0,
+    uid,
+    n: String(raw.n ?? raw.name ?? raw.nickname ?? '用户'),
+    m: String(m)
+  }
+}
+
+function parseFile(data) {
+  let list = []
+  if (Array.isArray(data)) list = data
+  else if (Array.isArray(data?.msgs)) list = data.msgs
+  else if (data && (data.uid != null || data.user_id != null) && (data.m != null || data.msg != null)) list = [data]
+  return list.map(normMsg).filter(Boolean)
 }
 
 function touch(gid) {
@@ -27,8 +49,7 @@ export function loadLog(gid) {
   }
   let msgs = []
   try {
-    const data = JSON.parse(fs.readFileSync(fileOf(gid), 'utf8'))
-    msgs = Array.isArray(data) ? data : (data.msgs || [])
+    msgs = parseFile(JSON.parse(fs.readFileSync(fileOf(gid), 'utf8')))
   } catch (err) {
     if (err?.code !== 'ENOENT') logger.error('deepseek 读取聊天记录失败: ' + (err?.message || err))
   }
@@ -86,17 +107,22 @@ export function clearLog(gid) {
   }
 }
 
+export function visibleMsgs(gid) {
+  return loadLog(gid).msgs.filter(m => !isFilteredUser(m.uid))
+}
+
 export function logCount(gid) {
   if (!gid) return 0
-  return loadLog(gid).msgs.length
+  return visibleMsgs(gid).length
 }
 
 export function contextOf(gid, n = 10) {
   const msgs = loadLog(gid).msgs
-  if (!msgs.length) return { history: [], current: null }
+  if (!msgs.length) return { history: [], current: null, skip: true }
   const current = msgs[msgs.length - 1]
-  const start = Math.max(0, msgs.length - 1 - n)
-  return { history: msgs.slice(start, msgs.length - 1), current }
+  if (isFilteredUser(current.uid)) return { history: [], current, skip: true }
+  const prior = msgs.slice(0, -1).filter(m => !isFilteredUser(m.uid))
+  return { history: prior.slice(-n), current, skip: false }
 }
 
 export function recordIncoming(e) {

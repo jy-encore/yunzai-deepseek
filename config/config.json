@@ -8,5 +8,6 @@
   "historyCount": 10,
   "logKeep": 100,
   "maxTokens": 120,
-  "temperature": 0.9
+  "temperature": 0.9,
+  "disabledGroups": []
 }

@@ -13,7 +13,8 @@ const DEFAULTS = {
   historyCount: 10,
   logKeep: 100,
   maxTokens: 120,
-  temperature: 0.9
+  temperature: 0.9,
+  disabledGroups: []
 }
 
 let cache = null
@@ -27,6 +28,8 @@ function normalize(raw) {
   cfg.temperature = clamp(parseFloat(cfg.temperature), 0, 2)
   if (!Array.isArray(cfg.apiKeys)) cfg.apiKeys = cfg.apiKey ? [String(cfg.apiKey)] : []
   cfg.apiKeys = cfg.apiKeys.map(k => String(k || '').trim()).filter(Boolean)
+  const off = Array.isArray(cfg.disabledGroups) ? cfg.disabledGroups : []
+  cfg.disabledGroups = [...new Set(off.map(id => String(id)).filter(Boolean))]
   return cfg
 }
 
@@ -47,4 +50,16 @@ export function saveConfig(partial) {
   fs.mkdirSync(path.dirname(configFile), { recursive: true })
   fs.writeFileSync(configFile, JSON.stringify(cfg, null, 2))
   return cfg
+}
+
+export function isGroupEnabled(gid) {
+  if (!gid) return true
+  return !getConfig().disabledGroups.includes(String(gid))
+}
+
+export function setGroupEnabled(gid, on) {
+  const id = String(gid)
+  const cur = getConfig().disabledGroups.filter(x => x !== id)
+  if (!on) cur.push(id)
+  return saveConfig({ disabledGroups: cur })
 }

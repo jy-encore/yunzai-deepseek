@@ -48,6 +48,10 @@ export function extractText(e) {
   return clip(cqToText(t), 180)
 }
 
+export function isFilteredUser(uid) {
+  return String(uid ?? '').startsWith('3889')
+}
+
 export function isSelfMsg(e) {
   if (!e?.user_id) return false
   if (e.user_id == e.self_id) return true

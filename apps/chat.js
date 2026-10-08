@@ -1,8 +1,8 @@
-import { getConfig } from '../model/config.js'
+import { getConfig, isGroupEnabled } from '../model/config.js'
 import { contextOf, recordBot, recordIncoming } from '../model/chatlog.js'
 import { buildChatPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
-import { clip, isGroupEvent, isIgnoredPrefix, isIgnore, isSelfMsg, toSegments } from '../utils/text.js'
+import { clip, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isSelfMsg, toSegments } from '../utils/text.js'
 
 export class DeepSeekChat extends plugin {
   constructor() {
@@ -26,6 +26,8 @@ export class DeepSeekChat extends plugin {
       logger.error('deepseek 记录失败: ' + (err?.message || err))
     }
     if (!isGroupEvent(e) || isSelfMsg(e)) return false
+    if (!isGroupEnabled(e.group_id)) return false
+    if (isFilteredUser(e.user_id)) return false
 
     const raw = e.msg ? String(e.msg).trim() : ''
     if (!raw || isIgnoredPrefix(raw)) return false
@@ -33,8 +35,8 @@ export class DeepSeekChat extends plugin {
     const cfg = getConfig()
     if (Math.random() >= cfg.probability) return false
 
-    const { history, current } = contextOf(e.group_id, cfg.historyCount)
-    if (!current) return false
+    const { history, current, skip } = contextOf(e.group_id, cfg.historyCount)
+    if (skip || !current) return false
 
     const prompt = buildChatPrompt({
       groupId: e.group_id,

@@ -1,5 +1,5 @@
-import { getConfig } from '../model/config.js'
-import { clearLog, loadLog, recordBot } from '../model/chatlog.js'
+import { getConfig, isGroupEnabled } from '../model/config.js'
+import { clearLog, recordBot, visibleMsgs } from '../model/chatlog.js'
 import { buildSummaryPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
 import { clip, isGroupEvent, toSegments } from '../utils/text.js'
@@ -35,23 +35,27 @@ export class DeepSeekSummary extends plugin {
       await e.reply('总结群聊只在群里用')
       return true
     }
+    if (!isGroupEnabled(e.group_id)) {
+      await e.reply('本群回复已关闭', true)
+      return true
+    }
     const now = Date.now()
     if (now - (cooldown.get(e.group_id) || 0) < 40000) {
       await e.reply('刚总结过，稍等一会儿再喊我', true)
       return true
     }
-    const rec = loadLog(e.group_id)
-    if (rec.msgs.length < 5) {
-      await e.reply(`这群才记下 ${rec.msgs.length} 条，再聊一会儿再总结`, true)
+    const msgs = visibleMsgs(e.group_id)
+    if (msgs.length < 5) {
+      await e.reply(`这群才记下 ${msgs.length} 条，再聊一会儿再总结`, true)
       return true
     }
     cooldown.set(e.group_id, now)
-    await e.reply(`我先翻一下最近 ${rec.msgs.length} 条记录…`, true)
+    await e.reply(`我先翻一下最近 ${msgs.length} 条记录…`, true)
     const extra = e.msg.replace(/^#(总结群聊|总结聊天|群聊总结|deepseek总结)/, '').trim()
     const cfg = getConfig()
     try {
       const text = await completeText(
-        [{ role: 'user', content: clip(buildSummaryPrompt(e.group_id, extra, rec.msgs), 8000) }],
+        [{ role: 'user', content: clip(buildSummaryPrompt(e.group_id, extra, msgs), 8000) }],
         { think: true, maxTokens: 4096, fallbackTokens: 900, temperature: 0.7 }
       )
       if (!text) {
@@ -60,7 +64,7 @@ export class DeepSeekSummary extends plugin {
         return true
       }
       const body = clip(text, 1200)
-      const segs = await toSegments(e, `群聊复盘（${rec.msgs.length} 条）\n${body}`)
+      const segs = await toSegments(e, `群聊复盘（${msgs.length} 条）\n${body}`)
       await e.reply(segs)
       recordBot(e, body, cfg.botName)
     } catch (err) {
