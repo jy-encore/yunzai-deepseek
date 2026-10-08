@@ -1,6 +1,6 @@
 import { lineOf } from '../utils/text.js'
 
-export function buildChatPrompt({ groupId, role, history, current }) {
+export function buildChatPrompt({ groupId, role, history, current, mustReply = false }) {
   const historyText = history.length
     ? history.map((m, i) => lineOf(m, i + 1)).join('\n')
     : '（没有更早的消息）'
@@ -29,7 +29,7 @@ ${historyText}
 ${currentText}
 # Output
 如果你选择回复，直接输出你的回复内容（不要包含任何前缀或解释）。
-如果你选择忽略，只输出 [IGNORE]。`
+如果你选择忽略，只输出 [IGNORE]。${mustReply ? '\n# Extra\n最新消息以你的名字开头，这是在喊你。必须回复，禁止输出 [IGNORE]。' : ''}`
 }
 
 export function buildSummaryPrompt(groupId, userAsk, msgs) {

@@ -10,6 +10,7 @@ const DEFAULTS = {
   botName: '安可儿',
   role: '你叫安可儿，一个聪明伶俐、逻辑清晰的可爱猫娘。请用一针见血、充满智慧且言简意赅的语言回答问题，兼顾猫娘的可爱语气（适度使用喵、~等），拒绝废话，但必须保证核心逻辑的深度。',
   probability: 0.05,
+  nameProbability: 1,
   historyCount: 10,
   logKeep: 100,
   maxTokens: 120,
@@ -22,6 +23,7 @@ let cache = null
 function normalize(raw) {
   const cfg = { ...DEFAULTS, ...(raw || {}) }
   cfg.probability = clamp(cfg.probability, 0, 1)
+  cfg.nameProbability = clamp(cfg.nameProbability, 0, 1)
   cfg.historyCount = clamp(parseInt(cfg.historyCount), 1, 30)
   cfg.logKeep = clamp(parseInt(cfg.logKeep), 20, 500)
   cfg.maxTokens = clamp(parseInt(cfg.maxTokens), 32, 2048)

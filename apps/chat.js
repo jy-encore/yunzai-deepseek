@@ -33,7 +33,10 @@ export class DeepSeekChat extends plugin {
     if (!raw || isIgnoredPrefix(raw)) return false
 
     const cfg = getConfig()
-    if (Math.random() >= cfg.probability) return false
+    const name = String(cfg.botName || '').trim()
+    const named = !!(name && raw.startsWith(name))
+    const chance = named ? cfg.nameProbability : cfg.probability
+    if (Math.random() >= chance) return false
 
     const { history, current, skip } = contextOf(e.group_id, cfg.historyCount)
     if (skip || !current) return false
@@ -42,7 +45,8 @@ export class DeepSeekChat extends plugin {
       groupId: e.group_id,
       role: cfg.role,
       history,
-      current
+      current,
+      mustReply: named
     })
 
     let text = ''

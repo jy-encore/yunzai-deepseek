@@ -10,6 +10,7 @@ const HELP = [
   { cmd: '#deepseek关闭', desc: '关掉当前群的回复' },
   { cmd: '#总结群聊', desc: '用本群 chatlog 做一次复盘' },
   { cmd: '#deepseek设置回复概率 5', desc: '普通消息触发概率，5 或 0.05' },
+  { cmd: '以 botName 开头', desc: '按 nameProbability，默认 100% 进入回复' },
   { cmd: '#deepseek设置历史条数 10', desc: '命中后附带的前文条数' },
   { cmd: '#deepseek设置回复上限 120', desc: '单次 max_tokens' },
   { cmd: '#deepseek设置温度 0.9', desc: '采样温度 0 到 2' },
