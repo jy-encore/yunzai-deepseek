@@ -140,11 +140,13 @@ export function stripThink(text) {
     .trim()
 }
 
+const THINK_META = /我可以接一句|可以接一句|互相拉扯|是否需要回复|决定是否回复|要不要回复|最新消息|硬插话|没啥可接|这句话没|输出\s*\[?\s*IGNORE|The conversation is about|the latest message/i
+
 export function isThinkingLeak(text) {
   const t = stripThink(text)
   if (!t) return true
-  if (/^The conversation is about\b/i.test(t)) return true
-  if (/\b(the latest message|reasoning_content)\b/i.test(t) && /[\u4e00-\u9fff]/.test(t) === false) return true
+  if (THINK_META.test(t)) return true
+  if (t.length > 70 && /我可以|接一句|调侃/.test(t) && /[。]/.test(t)) return true
   return false
 }
 

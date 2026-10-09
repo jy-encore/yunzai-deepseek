@@ -60,6 +60,7 @@ const DEFAULTS = {
   role: '你叫安可儿，一个聪明伶俐、逻辑清晰的可爱猫娘。请用一针见血、充满智慧且言简意赅的语言回答问题，兼顾猫娘的可爱语气（适度使用喵、~等），拒绝废话，但必须保证核心逻辑的深度。',
   probability: 0.05,
   nameProbability: 1,
+  replyGap: 40,
   historyCount: 10,
   logKeep: 100,
   maxTokens: 120,
@@ -123,6 +124,7 @@ function normalize(raw) {
   const cfg = { ...DEFAULTS, ...src }
   cfg.probability = clamp(cfg.probability, 0, 1)
   cfg.nameProbability = clamp(cfg.nameProbability, 0, 1)
+  cfg.replyGap = clamp(parseInt(cfg.replyGap), 0, 600)
   cfg.historyCount = clamp(parseInt(cfg.historyCount), 1, 30)
   cfg.logKeep = clamp(parseInt(cfg.logKeep), 20, 500)
   cfg.maxTokens = clamp(parseInt(cfg.maxTokens), 32, 2048)
@@ -170,6 +172,7 @@ function write(cfg) {
     role: cfg.role,
     probability: cfg.probability,
     nameProbability: cfg.nameProbability,
+    replyGap: cfg.replyGap,
     historyCount: cfg.historyCount,
     logKeep: cfg.logKeep,
     maxTokens: cfg.maxTokens,

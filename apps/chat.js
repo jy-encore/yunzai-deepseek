@@ -4,6 +4,8 @@ import { buildChatPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
 import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, isThinkingLeak, toSegments } from '../utils/text.js'
 
+const lastCasual = new Map()
+
 export class DeepSeekChat extends plugin {
   constructor() {
     super({
@@ -39,6 +41,10 @@ export class DeepSeekChat extends plugin {
     if (!wake && !raw) return false
     const chance = wake ? cfg.nameProbability : cfg.probability
     if (Math.random() >= chance) return false
+    if (!wake && cfg.replyGap > 0) {
+      const prev = lastCasual.get(String(e.group_id)) || 0
+      if (Date.now() - prev < cfg.replyGap * 1000) return false
+    }
 
     const { history, current, skip } = contextOf(e.group_id, cfg.historyCount)
     if (skip || !current) return false
@@ -64,12 +70,13 @@ export class DeepSeekChat extends plugin {
     }
 
     if (isIgnore(text) || isThinkingLeak(text)) return false
-    text = clip(text.replace(/^["'`]+|["'`]+$/g, ''), 200)
-    if (!text || isIgnore(text)) return false
+    text = clip(text.replace(/^["'`]+|["'`]+$/g, ''), 80)
+    if (!text || isIgnore(text) || isThinkingLeak(text)) return false
 
     const segs = await toSegments(e, text)
     await e.reply(segs)
     recordBot(e, text, cfg.botName)
+    if (!wake) lastCasual.set(String(e.group_id), Date.now())
     return true
   }
 }

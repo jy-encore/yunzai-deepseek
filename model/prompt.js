@@ -28,8 +28,10 @@ ${historyText}
 最新消息：
 ${currentText}
 # Output
-如果你选择回复，直接输出你的回复内容（不要包含任何前缀或解释）。
-如果你选择忽略，只输出 [IGNORE]。${mustReply ? '\n# Extra\n最新消息是在叫你（点名、@你或回复你）。必须回复，禁止输出 [IGNORE]。' : ''}`
+只允许两种输出，不要第三种：
+- 回复：一句口语，50 字以内，不要前缀，不要解释，不要复述别人的原话，不要分析气氛，不要写“我可以接”“最新消息”“互相拉扯”。
+- 不回复：只输出 [IGNORE]
+禁止把思考过程、判断理由、草稿或方括号备注写出来。${mustReply ? '\n# Extra\n最新消息是在叫你（点名、@你或回复你）。必须回复，禁止输出 [IGNORE]，仍然只输出那一句人话。' : ''}`
 }
 
 export function buildSummaryPrompt(groupId, userAsk, msgs) {
