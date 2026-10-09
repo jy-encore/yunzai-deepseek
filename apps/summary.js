@@ -2,7 +2,7 @@ import { getConfig, isGroupEnabled } from '../model/config.js'
 import { clearLog, recordBot, visibleMsgs } from '../model/chatlog.js'
 import { buildSummaryPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
-import { clip, isGroupEvent, toSegments } from '../utils/text.js'
+import { clip, isGroupEvent, isThinkingLeak, toSegments } from '../utils/text.js'
 
 const cooldown = new Map()
 
@@ -69,7 +69,7 @@ export class DeepSeekSummary extends plugin {
         [{ role: 'user', content: clip(buildSummaryPrompt(e.group_id, extra, msgs), 8000) }],
         { think: true, maxTokens: 4096, fallbackTokens: 900, temperature: 0.7 }
       )
-      if (!text) {
+      if (!text || isThinkingLeak(text)) {
         cooldown.set(e.group_id, Date.now() - 32000)
         await e.reply('翻完了但没理出头绪，稍后再试', true)
         return true

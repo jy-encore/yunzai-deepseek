@@ -2,7 +2,7 @@ import { getConfig, isGroupEnabled } from '../model/config.js'
 import { contextOf, recordBot, recordIncoming } from '../model/chatlog.js'
 import { buildChatPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
-import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, toSegments } from '../utils/text.js'
+import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, isThinkingLeak, toSegments } from '../utils/text.js'
 
 export class DeepSeekChat extends plugin {
   constructor() {
@@ -63,7 +63,7 @@ export class DeepSeekChat extends plugin {
       return false
     }
 
-    if (isIgnore(text)) return false
+    if (isIgnore(text) || isThinkingLeak(text)) return false
     text = clip(text.replace(/^["'`]+|["'`]+$/g, ''), 200)
     if (!text || isIgnore(text)) return false
 

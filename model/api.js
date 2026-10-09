@@ -40,14 +40,11 @@ export async function complete(messages, { think = false, maxTokens = 120, tempe
   if (mimoHost(ep)) {
     body.max_completion_tokens = maxTokens
     body.temperature = Math.min(1.5, Math.max(0, Number(temperature) || 0.9))
-    body.extra_body = { thinking: { type: 'disabled' } }
+    body.thinking = { type: 'disabled' }
   } else if (deepseekHost(ep)) {
     body.max_tokens = maxTokens
-    const extra = think
-      ? { thinking: { type: 'enabled' }, reasoning_effort: 'low' }
-      : { thinking: { type: 'disabled' }, reasoning_effort: 'none' }
-    body.reasoning_effort = extra.reasoning_effort
-    body.extra_body = extra
+    body.thinking = { type: think ? 'enabled' : 'disabled' }
+    body.reasoning_effort = think ? 'low' : 'none'
     if (!think) body.temperature = temperature
   } else {
     body.max_tokens = maxTokens

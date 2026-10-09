@@ -130,10 +130,22 @@ export function pickContent(msg) {
     c = c.map(p => (typeof p === 'string' ? p : (p?.text || p?.content || ''))).join('')
   }
   if (c && typeof c === 'object') c = c.text || c.content || ''
-  const text = String(c || '').trim()
-  if (text) return text
-  const reasoning = msg.reasoning_content || msg.reasoning
-  return String(reasoning || '').trim()
+  return stripThink(c)
+}
+
+export function stripThink(text) {
+  return String(text || '')
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<\/?think>/gi, '')
+    .trim()
+}
+
+export function isThinkingLeak(text) {
+  const t = stripThink(text)
+  if (!t) return true
+  if (/^The conversation is about\b/i.test(t)) return true
+  if (/\b(the latest message|reasoning_content)\b/i.test(t) && /[\u4e00-\u9fff]/.test(t) === false) return true
+  return false
 }
 
 export function isIgnore(text) {
