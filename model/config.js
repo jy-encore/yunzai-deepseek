@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { configFile } from './path.js'
+import { configFile, defaultConfigFile } from './path.js'
 import { clamp } from '../utils/text.js'
 
 export const PRESETS = [
@@ -183,15 +183,18 @@ function write(cfg) {
   return cfg
 }
 
+function ensureConfigFile() {
+  if (fs.existsSync(configFile)) return
+  fs.mkdirSync(path.dirname(configFile), { recursive: true })
+  if (!fs.existsSync(defaultConfigFile)) throw new Error('缺少 config_default.json')
+  fs.copyFileSync(defaultConfigFile, configFile)
+}
+
 export function getConfig() {
   if (cache) return cache
   try {
-    const raw = JSON.parse(fs.readFileSync(configFile, 'utf8'))
-    cache = normalize(raw)
-    const had = new Set((Array.isArray(raw.endpoints) ? raw.endpoints : []).map(e => e?.name).filter(Boolean))
-    const missingPreset = PRESETS.some(p => !had.has(p.name))
-    const legacy = raw.model != null || raw.baseURL != null || raw.apiKeys != null || raw.apiKey != null || !Array.isArray(raw.endpoints)
-    if (legacy || missingPreset) write(cache)
+    ensureConfigFile()
+    cache = normalize(JSON.parse(fs.readFileSync(configFile, 'utf8')))
   } catch (err) {
     logger.error('deepseek 读取 config.json 失败，使用默认配置: ' + (err?.message || err))
     cache = normalize({})

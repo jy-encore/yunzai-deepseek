@@ -11,11 +11,13 @@ git clone https://github.com/jy-encore/yunzai-deepseek.git plugins/deepseek
 pnpm add openai -w
 ```
 
-重启 Yunzai。
+重启 Yunzai。第一次启动如果没有 `config/config.json`，会从 `config_default.json` 复制一份。已经有的文件不会被覆盖，`git pull` 也不会碰它。
 
 ## 配置
 
-复制思路：直接改 [config/config.json](config/config.json)。密钥写在对应接口的 `apiKeys` 里，留在本机，**不要提交回仓库**。
+要改的是本机的 [config/config.json](config/config.json)。仓库里只有 [config/config_default.json](config/config_default.json)，没有密钥。这个文件不进 Git，只能手动改，或用下面的 `#deepseek设置` 指令写进去。
+
+密钥写在对应接口的 `apiKeys` 里。
 
 | 字段 | 默认 | 说明 |
 |---|---|---|
@@ -102,7 +104,7 @@ pnpm add openai -w
 ```
 apps/        记账、概率回复、总结、帮助
 model/       配置、记录、接口、渲染
-config/      config.json
+config/      config_default.json 在仓库里；config.json 只在本机
 chatlog/     每个群一份记录
 resources/   帮助和状态的页面
 ```
