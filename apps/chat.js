@@ -2,7 +2,7 @@ import { getConfig, isGroupEnabled } from '../model/config.js'
 import { contextOf, recordBot, recordIncoming } from '../model/chatlog.js'
 import { buildChatPrompt } from '../model/prompt.js'
 import { completeText } from '../model/api.js'
-import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, isThinkingLeak, toSegments } from '../utils/text.js'
+import { clip, isAtBot, isFilteredUser, isGroupEvent, isIgnoredPrefix, isIgnore, isReplyToBot, isSelfMsg, isThinkingLeak, mentionsBotName, toSegments } from '../utils/text.js'
 
 const lastCasual = new Map()
 
@@ -36,14 +36,17 @@ export class DeepSeekChat extends plugin {
 
     const cfg = getConfig()
     const name = String(cfg.botName || '').trim()
-    const named = !!(name && raw.startsWith(name))
+    const named = mentionsBotName(raw, name)
     const wake = named || isAtBot(e) || await isReplyToBot(e)
     if (!wake && !raw) return false
-    const chance = wake ? cfg.nameProbability : cfg.probability
-    if (Math.random() >= chance) return false
-    if (!wake && cfg.replyGap > 0) {
-      const prev = lastCasual.get(String(e.group_id)) || 0
-      if (Date.now() - prev < cfg.replyGap * 1000) return false
+    if (wake) {
+      if (Math.random() >= cfg.nameProbability) return false
+    } else {
+      if (Math.random() >= cfg.probability) return false
+      if (cfg.replyGap > 0) {
+        const prev = lastCasual.get(String(e.group_id)) || 0
+        if (Date.now() - prev < cfg.replyGap * 1000) return false
+      }
     }
 
     const { history, current, skip } = contextOf(e.group_id, cfg.historyCount)

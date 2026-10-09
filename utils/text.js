@@ -62,7 +62,14 @@ function botUins(e) {
 export function isAtBot(e) {
   if (e?.atBot || e?.atme) return true
   const uins = botUins(e)
-  if (e?.at != null && e.at !== 'all' && uins.has(String(e.at))) return true
+  const ids = []
+  if (Array.isArray(e?.at)) ids.push(...e.at)
+  else if (e?.at != null) ids.push(e.at)
+  if (Array.isArray(e?.atList)) ids.push(...e.atList)
+  for (const id of ids) {
+    if (id == null || id === 'all' || id === 'ALL') continue
+    if (uins.has(String(id))) return true
+  }
   const segs = Array.isArray(e?.message) ? e.message : []
   for (const seg of segs) {
     if (!seg || seg.type !== 'at') continue
@@ -72,9 +79,18 @@ export function isAtBot(e) {
   }
   const raw = String(e?.raw_message || '')
   for (const u of uins) {
-    if (raw.includes(`[CQ:at,qq=${u}]`)) return true
+    if (raw.includes(`[CQ:at,qq=${u}]`) || raw.includes(`[CQ:at,qq=${u},`)) return true
   }
   return false
+}
+
+export function mentionsBotName(raw, botName) {
+  const name = String(botName || '').trim()
+  const text = String(raw || '').trim()
+  if (!name || !text) return false
+  if (text.startsWith(name)) return true
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?:^|\\s)@${esc}`).test(text)
 }
 
 export async function isReplyToBot(e) {
