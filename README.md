@@ -43,7 +43,7 @@ pnpm add openai -w
 }
 ```
 
-仓库里预置了 DeepSeek、通义千问、小米 MiMo、Moonshot、智谱、硅基流动和 Moyuu（`https://moyuu.cc/v1`，文档示例模型 `gpt-4o`），密钥都是空的。其它兼容 `/chat/completions` 的接口，用 `#deepseek添加接口` 写进去即可。思考相关参数只在 DeepSeek 上带，避免其它厂商拒请求。余额查询也只有 DeepSeek 支持。
+仓库里预置了 DeepSeek、通义千问、小米 MiMo、Moonshot、智谱、硅基流动和 Moyuu（`https://moyuu.cc/v1`，文档示例模型 `gpt-4o`），密钥都是空的。其它兼容 `/chat/completions` 的接口，用 `#deepseek添加接口` 写进去即可。思考相关参数只在 DeepSeek 上带。MiMo 默认会思考，而且思考和正文共用长度，短回复时正文会是空的，所以调用 MiMo 时会关掉思考，并用 `max_completion_tokens`。余额查询也只有 DeepSeek 支持。
 
 以前写在最外层的 `model`、`baseURL`、`apiKeys` 已经不再保存。手上如果还是旧文件、里面没有 `endpoints`，启动时会读一次并归进对应接口。
 
@@ -68,7 +68,7 @@ pnpm add openai -w
 
 群里：
 
-- `#总结群聊`：用本群记录做一次复盘，先一句提示，再一条正文
+- `#总结群聊`：用本群记录做一次复盘，先一句提示，再一条正文。`安可儿总结聊天` 也同样会触发。
 
 ## 回复规则
 

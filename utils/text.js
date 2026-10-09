@@ -130,7 +130,10 @@ export function pickContent(msg) {
     c = c.map(p => (typeof p === 'string' ? p : (p?.text || p?.content || ''))).join('')
   }
   if (c && typeof c === 'object') c = c.text || c.content || ''
-  return String(c || '').trim()
+  const text = String(c || '').trim()
+  if (text) return text
+  const reasoning = msg.reasoning_content || msg.reasoning
+  return String(reasoning || '').trim()
 }
 
 export function isIgnore(text) {

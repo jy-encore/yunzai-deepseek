@@ -6,6 +6,16 @@ import { clip, isGroupEvent, toSegments } from '../utils/text.js'
 
 const cooldown = new Map()
 
+function parseSummary(msg, botName) {
+  let text = String(msg || '').trim()
+  const name = String(botName || '').trim()
+  if (name && text.startsWith(name)) text = text.slice(name.length).trim()
+  text = text.replace(/^#/, '').trim()
+  const matched = text.match(/^(总结群聊|总结聊天|群聊总结|deepseek总结)(.*)$/)
+  if (!matched) return null
+  return matched[2].trim()
+}
+
 export class DeepSeekSummary extends plugin {
   constructor() {
     super({
@@ -14,7 +24,7 @@ export class DeepSeekSummary extends plugin {
       event: 'message',
       priority: 2100,
       rule: [
-        { reg: '^#(总结群聊|总结聊天|群聊总结|deepseek总结)(.*)$', fnc: 'summarize', log: false },
+        { reg: '.*(总结群聊|总结聊天|群聊总结|deepseek总结).*', fnc: 'summarize', log: false },
         { reg: '^#deepseek清空记录$', fnc: 'clear', permission: 'master' }
       ]
     })
@@ -31,6 +41,9 @@ export class DeepSeekSummary extends plugin {
   }
 
   async summarize(e) {
+    const cfg = getConfig()
+    const extra = parseSummary(e.msg, cfg.botName)
+    if (extra == null) return false
     if (!isGroupEvent(e)) {
       await e.reply('总结群聊只在群里用')
       return true
@@ -51,8 +64,6 @@ export class DeepSeekSummary extends plugin {
     }
     cooldown.set(e.group_id, now)
     await e.reply(`我先翻一下最近 ${msgs.length} 条记录…`, true)
-    const extra = e.msg.replace(/^#(总结群聊|总结聊天|群聊总结|deepseek总结)/, '').trim()
-    const cfg = getConfig()
     try {
       const text = await completeText(
         [{ role: 'user', content: clip(buildSummaryPrompt(e.group_id, extra, msgs), 8000) }],

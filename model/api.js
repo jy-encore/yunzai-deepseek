@@ -26,22 +26,33 @@ function deepseekHost(ep) {
   return /deepseek/i.test(ep?.name || '') || /deepseek\.com/i.test(ep?.baseURL || '')
 }
 
+function mimoHost(ep) {
+  return /mimo/i.test(ep?.name || '') || /mimo/i.test(ep?.model || '') || /xiaomimimo\.com/i.test(ep?.baseURL || '')
+}
+
 export async function complete(messages, { think = false, maxTokens = 120, temperature = 0.9 } = {}) {
   const ep = activeEndpoint()
   if (!ep?.apiKeys?.length) throw new Error(`接口 ${ep?.name || ''} 没有 apiKeys`)
   const body = {
     model: ep.model,
-    messages,
-    max_tokens: maxTokens
+    messages
   }
-  if (deepseekHost(ep)) {
+  if (mimoHost(ep)) {
+    body.max_completion_tokens = maxTokens
+    body.temperature = Math.min(1.5, Math.max(0, Number(temperature) || 0.9))
+    body.extra_body = { thinking: { type: 'disabled' } }
+  } else if (deepseekHost(ep)) {
+    body.max_tokens = maxTokens
     const extra = think
       ? { thinking: { type: 'enabled' }, reasoning_effort: 'low' }
       : { thinking: { type: 'disabled' }, reasoning_effort: 'none' }
     body.reasoning_effort = extra.reasoning_effort
     body.extra_body = extra
+    if (!think) body.temperature = temperature
+  } else {
+    body.max_tokens = maxTokens
+    if (!think) body.temperature = temperature
   }
-  if (!think) body.temperature = temperature
   let tried = 0
   let lastErr
   while (tried < ep.apiKeys.length) {
@@ -64,6 +75,11 @@ export async function completeText(messages, opt = {}) {
   if (!text && opt.think) {
     res = await complete(messages, { ...opt, think: false, maxTokens: opt.fallbackTokens || 800 })
     text = pickContent(res?.choices?.[0]?.message)
+  }
+  if (!text) {
+    const msg = res?.choices?.[0]?.message
+    const reason = res?.choices?.[0]?.finish_reason || ''
+    logger.error(`接口返回空内容 finish=${reason} fields=${msg ? Object.keys(msg).join(',') : 'none'}`)
   }
   return text
 }
