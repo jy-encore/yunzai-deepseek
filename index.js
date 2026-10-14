@@ -1,3 +1,8 @@
+/**
+ * Yunzai 入口。扫描 apps 目录，把每个文件里的插件类交给 Yunzai。
+ * 数字越小越先跑：logger 100 记账，panel 2000 指令，summary 2100 总结，chat 8000 概率回复。
+ * 某个文件载入失败只打错误，不影响其余插件。
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

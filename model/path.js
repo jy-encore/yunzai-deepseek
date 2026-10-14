@@ -1,3 +1,7 @@
+/**
+ * 插件内的固定路径。
+ * config.json 只在本机，不进 Git；缺文件时从 config_default.json 复制一次。
+ */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 

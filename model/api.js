@@ -1,3 +1,9 @@
+/**
+ * OpenAI 兼容的聊天补全。当前用哪套接口由 config.active 决定。
+ * 同一接口的多把密钥失败后轮换。客户端按「接口名 + 序号 + 地址 + 密钥」缓存。
+ * MiMo 必须在请求最外层关思考，并用 max_completion_tokens；Node SDK 不会展开 extra_body。
+ * DeepSeek 才带 thinking / reasoning_effort。余额接口也只有 DeepSeek 有。
+ */
 import OpenAI from 'openai'
 import { activeEndpoint, getConfig } from './config.js'
 import { pickContent } from '../utils/text.js'
@@ -17,6 +23,7 @@ function clientFor(ep, i) {
   return clients.get(id)
 }
 
+/** 换接口、换模型、改密钥后调用，避免继续用旧地址。 */
 export function resetClients() {
   clients.clear()
   keyIndex = 0
@@ -69,6 +76,7 @@ export async function complete(messages, { think = false, maxTokens = 120, tempe
 export async function completeText(messages, opt = {}) {
   let res = await complete(messages, opt)
   let text = pickContent(res?.choices?.[0]?.message)
+  // 开了思考却没拿到正文时，再请求一次且关掉思考
   if (!text && opt.think) {
     res = await complete(messages, { ...opt, think: false, maxTokens: opt.fallbackTokens || 800 })
     text = pickContent(res?.choices?.[0]?.message)

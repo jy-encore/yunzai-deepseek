@@ -1,3 +1,9 @@
+/**
+ * 每个群一份本地 JSON：chatlog/群号.json。
+ * 内存里最多留 40 个群，写入合并到 800ms 后，避免每条消息都落盘。
+ * 磁盘格式兼容旧的单条 { ts, uid, n, m } 和数组；读入后统一成 { msgs }。
+ * 3889 开头的号仍会记下来，但 visibleMsgs / contextOf 拿去给模型时会滤掉。
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { chatlogDir } from './path.js'
@@ -12,6 +18,7 @@ function fileOf(gid) {
   return path.join(chatlogDir, `${gid}.json`)
 }
 
+/** 把旧字段名收成 ts / uid / n / m。空内容丢弃。 */
 function normMsg(raw) {
   if (!raw || typeof raw !== 'object') return null
   const uid = raw.uid ?? raw.user_id ?? raw.userId
@@ -41,6 +48,7 @@ function touch(gid) {
   logs.set(gid, rec)
 }
 
+/** Map 按插入顺序淘汰最久没读的群。先把它刷到磁盘。 */
 export function loadLog(gid) {
   gid = String(gid)
   if (logs.has(gid)) {
@@ -116,6 +124,7 @@ export function logCount(gid) {
   return visibleMsgs(gid).length
 }
 
+/** 回复用的上下文：最后一条是当前消息，再往前取 n 条未过滤的。当前这条来自 3889 则 skip。 */
 export function contextOf(gid, n = 10) {
   const msgs = loadLog(gid).msgs
   if (!msgs.length) return { history: [], current: null, skip: true }
@@ -125,6 +134,7 @@ export function contextOf(gid, n = 10) {
   return { history: prior.slice(-n), current, skip: false }
 }
 
+/** 同一秒内完全相同的群消息只记一次，避免 logger 和 chat 各写一遍。 */
 export function recordIncoming(e) {
   if (!isGroupEvent(e) || isSelfMsg(e)) return
   const m = extractText(e)

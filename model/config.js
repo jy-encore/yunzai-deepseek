@@ -1,8 +1,16 @@
+/**
+ * 读写本机 config/config.json。仓库里只有 config_default.json。
+ * 没有 config.json 时复制一次默认文件；已有文件启动时不会改写。
+ * 真正落盘只发生在 saveConfig 以及它引出的切换、加密钥、群开关。
+ * 顶层的 model / baseURL / apiKeys 是当前接口的镜像，方便旧代码读取。
+ * 旧配置如果还没有 endpoints，会按地址归进预置接口，密钥留在对应项里。
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { configFile, defaultConfigFile } from './path.js'
 import { clamp } from '../utils/text.js'
 
+/** 预置的 OpenAI 兼容接口。密钥保持空，由本机 config.json 填写。 */
 export const PRESETS = [
   {
     name: 'deepseek',
@@ -94,6 +102,7 @@ function normEndpoint(raw, fallbackName) {
   return { name, baseURL, apiKeys: keyList(raw?.apiKeys ?? raw?.apiKey), models, model }
 }
 
+/** 文件里没写 endpoints 时，用预置列表，并把旧的三字段归到对得上的那一项。 */
 function seedEndpoints(raw) {
   const endpoints = PRESETS.map(p => normEndpoint(p))
   const legacyURL = String(raw?.baseURL || '').trim().replace(/\/$/, '')
@@ -119,6 +128,7 @@ function seedEndpoints(raw) {
   return { endpoints, active: hit?.name || endpoints[0].name }
 }
 
+/** 补上缺的预置接口，并让顶层 model / baseURL / apiKeys 跟随 active。不写磁盘。 */
 function normalize(raw) {
   const src = raw || {}
   const cfg = { ...DEFAULTS, ...src }
@@ -162,6 +172,7 @@ function normalize(raw) {
   return cfg
 }
 
+/** 只写 config.json。默认文件不动。 */
 function write(cfg) {
   cache = cfg
   fs.mkdirSync(path.dirname(configFile), { recursive: true })
@@ -236,6 +247,7 @@ export function switchEndpoint(nameOrIndex) {
   return saveConfig({ active: ep.name, endpoints: cfg.endpoints.map(cloneEp) })
 }
 
+/** 模型名若在别的接口列表里，连接口一起切过去；否则记到当前接口。 */
 export function switchModel(modelName) {
   const name = String(modelName || '').trim()
   if (!name) return null

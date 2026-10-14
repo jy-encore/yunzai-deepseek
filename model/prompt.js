@@ -1,3 +1,8 @@
+/**
+ * 拼给模型的提示词。普通回复要求只输出一句人话或 [IGNORE]。
+ * mustReply 为真时（点名、@、回复机器人）禁止 [IGNORE]。
+ * 总结另用一段复盘提示，不走闲聊那套字数限制。
+ */
 import { lineOf } from '../utils/text.js'
 
 export function buildChatPrompt({ groupId, role, history, current, mustReply = false }) {

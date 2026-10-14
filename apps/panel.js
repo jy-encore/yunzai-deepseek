@@ -1,3 +1,7 @@
+/**
+ * 主人指令：帮助图、状态图、本群开关、概率和接口切换。
+ * 渲染失败时退回纯文本。密钥只显示有几把，不回显原文。
+ */
 import { addEndpoint, addKey, getConfig, isGroupEnabled, saveConfig, setGroupEnabled, switchEndpoint, switchModel } from '../model/config.js'
 import { logCount } from '../model/chatlog.js'
 import { renderCard } from '../model/render.js'
@@ -178,6 +182,7 @@ export class DeepSeekPanel extends plugin {
       await e.reply('没有这个接口。用 #deepseek接口 看名称或序号')
       return true
     }
+    // 地址或密钥变了，丢掉旧的 SDK 客户端
     resetClients()
     const keys = cfg.apiKeys.length ? '' : '，还没有密钥'
     await e.reply(`已切换到 ${cfg.active} / ${cfg.model}${keys}`)

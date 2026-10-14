@@ -1,3 +1,8 @@
+/**
+ * 文本和消息判断。不负责发请求。
+ * 3889 开头的 QQ 不参与概率、上下文和总结。
+ * 思考过程只从正文里剥掉，不用 reasoning_content 充当回复。
+ */
 const CQ_RE = /\[CQ:[^\]]+\]/g
 
 export function clip(text, n = 180) {
@@ -11,6 +16,7 @@ export function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n))
 }
 
+/** 大于 1 当成百分数，例如 5 会变成 0.05。 */
 export function parseProb(s) {
   let n = parseFloat(String(s).trim())
   if (!Number.isFinite(n)) return null
@@ -48,6 +54,7 @@ export function extractText(e) {
   return clip(cqToText(t), 180)
 }
 
+/** 当前登录的机器人 QQ。用来判断 @ 和回复是不是冲着自己来的。@全体不算。 */
 function botUins(e) {
   const set = new Set()
   if (e?.self_id) set.add(String(e.self_id))
@@ -84,6 +91,7 @@ export function isAtBot(e) {
   return false
 }
 
+/** 以 botName 开头，或文本里出现 @botName。群里单独 @ QQ 由 isAtBot 判断。 */
 export function mentionsBotName(raw, botName) {
   const name = String(botName || '').trim()
   const text = String(raw || '').trim()
@@ -93,6 +101,7 @@ export function mentionsBotName(raw, botName) {
   return new RegExp(`(?:^|\\s)@${esc}`).test(text)
 }
 
+/** e.reply 在 Yunzai 里是发送函数，不能把它当成被回复的那条消息。 */
 export async function isReplyToBot(e) {
   const uins = botUins(e)
   const hit = (uid) => uid != null && uid !== '' && uid !== 'all' && uins.has(String(uid))
@@ -135,10 +144,12 @@ export function isGroupEvent(e) {
   return !!(e && (e.isGroup || e.message_type === 'group' || e.group_id))
 }
 
+/** 指令前缀。含 # / * % 的消息留给 Yunzai 其它插件。 */
 export function isIgnoredPrefix(raw) {
   return /^(stoken)|[*%#/]/.test(String(raw || '').trim())
 }
 
+/** 只取 content。思考字段不发到群里。 */
 export function pickContent(msg) {
   if (!msg) return ''
   let c = msg.content
@@ -158,6 +169,7 @@ export function stripThink(text) {
 
 const THINK_META = /我可以接一句|可以接一句|互相拉扯|是否需要回复|决定是否回复|要不要回复|最新消息|硬插话|没啥可接|这句话没|输出\s*\[?\s*IGNORE|The conversation is about|the latest message/i
 
+/** 模型把「我要不要回」写进正文时，整段丢掉。 */
 export function isThinkingLeak(text) {
   const t = stripThink(text)
   if (!t) return true
@@ -172,6 +184,7 @@ export function isIgnore(text) {
   return /^\[?\s*IGNORE\s*\]?/i.test(t)
 }
 
+/** 把模型输出里的 @QQ 或 CQ 码换成 Yunzai 的 at 段。失败就留原文。 */
 export async function toSegments(e, text) {
   const atRegex = /(at:|@)([a-zA-Z0-9]+)|\[CQ:at,qq=(\d+)\]/g
   const matches = []
@@ -193,6 +206,7 @@ export async function toSegments(e, text) {
   return parts.length ? parts : text
 }
 
+/** 提示词里的一行：昵称、QQ、内容。 */
 export function lineOf(m, i) {
   const head = i == null ? '' : `${i}. `
   return `${head}${m.n || '用户'}(userid:${m.uid}): ${m.m}`

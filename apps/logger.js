@@ -1,3 +1,7 @@
+/**
+ * 最早记下每条群消息。return false，不拦截后面的指令和回复。
+ * log: false，避免 Yunzai 把每条消息打成「正在处理」。
+ */
 import { recordIncoming } from '../model/chatlog.js'
 
 export class DeepSeekLogger extends plugin {

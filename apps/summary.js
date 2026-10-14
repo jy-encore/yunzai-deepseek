@@ -1,3 +1,8 @@
+/**
+ * 群聊总结。规则写得宽，真正是否总结由 parseSummary 决定。
+ * 对不上指令就 return false，交给后面的概率回复。
+ * 先发一句「我先翻一下」，正文单独一条。40 秒内不重复总结。
+ */
 import { getConfig, isGroupEnabled } from '../model/config.js'
 import { clearLog, recordBot, visibleMsgs } from '../model/chatlog.js'
 import { buildSummaryPrompt } from '../model/prompt.js'
@@ -6,6 +11,7 @@ import { clip, isGroupEvent, isThinkingLeak, toSegments } from '../utils/text.js
 
 const cooldown = new Map()
 
+/** 去掉 botName 和可选的 # 之后，必须以总结类指令开头。对不上返回 null。 */
 function parseSummary(msg, botName) {
   let text = String(msg || '').trim()
   const name = String(botName || '').trim()

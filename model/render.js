@@ -1,3 +1,7 @@
+/**
+ * 用 Yunzai 自带的 puppeteer 把 resources/html 渲染成图片。
+ * 失败返回 null，调用方改发文字。
+ */
 import path from 'node:path'
 import { htmlDir } from './path.js'
 
